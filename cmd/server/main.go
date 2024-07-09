@@ -54,7 +54,7 @@ func main() {
 	})
 
 	apiRoute := app.Group("/api")
-	controllers.NewValorantController(apiRoute, sess)
+	controllers.NewValorantController(apiRoute, sess, storage)
 
 	if err := app.Listen(viper.GetString("webserver.address")); err != nil {
 		log.Fatal(err)

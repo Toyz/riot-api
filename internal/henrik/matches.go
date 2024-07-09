@@ -3,7 +3,6 @@ package henrik
 import (
 	"fmt"
 	"github.com/go-zoox/fetch"
-	log "github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
 )
 
@@ -16,8 +15,6 @@ func GetMatches(region, name, tag string) ([]Match, error) {
 	if err != nil {
 		return nil, err
 	}
-
-	log.Infof("Response: %s", response.Body)
 
 	var rank Response[[]Match]
 	if err := response.UnmarshalJSON(&rank); err != nil {
