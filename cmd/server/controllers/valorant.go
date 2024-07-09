@@ -78,7 +78,7 @@ func (c *ValorantController) getMatches(ctx *fiber.Ctx) error {
 
 	key := c.createCacheKey(region, name, tag, "matches")
 	if c.redis != nil {
-		if data, err := c.redis.Get(key); err == nil {
+		if data, err := c.redis.Get(key); err == nil && len(data) > 0 {
 			ctx.Set(fiber.HeaderContentType, fiber.MIMEApplicationJSON)
 			ctx.Set(fiber.HeaderCacheControl, fmt.Sprintf("public, max-age=%v", cacheTime.Seconds()))
 			return ctx.Send(data)
