@@ -1,0 +1,77 @@
+name: Go
+
+on:
+  push:
+    branches: ["main"]
+
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4.1.1
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: "1.22.2"
+
+      - name: Test and Coverage
+        run: |
+          go test -v ./... -coverprofile=coverage.out
+          go tool cover -html=coverage.out -o coverage.html
+
+      - name: Upload Test Coverage
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-coverage
+          path: coverage.html
+
+  build:
+    needs: [tests]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    strategy:
+      fail-fast: false
+      matrix:
+        project:
+          - { name: "server", tag: "webserver", dockerfile: "Dockerfile" }
+          # - {
+          #   name: "stats_server",
+          #   tag: "stats_server",
+          #   dockerfile: "Dockerfile.worker",
+          # }
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4.1.1
+
+      - name: Log in to the Container registry
+        uses: docker/login-action@v3.0.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract metadata (tags, labels) for Docker
+        id: meta
+        uses: docker/metadata-action@v5.3.0
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+
+    #             github_token=${{ secrets.ACCESS_TOKEN }}
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5.1.0
+        with:
+          context: .
+          file: ${{ matrix.project.dockerfile || 'Dockerfile' }}
+          push: true
+          tags: ghcr.io/toyz/riot-api/${{ matrix.project.tag }}:latest,ghcr.io/toyz/riot-api/${{ matrix.project.tag }}:${{ github.sha }}
+          labels: ${{ steps.meta.outputs.labels }}
+          build-args: |
+            project=${{ matrix.project.name }}
+            version=${{ github.sha }}
+            build_date=$(date -u +'%Y-%m-%dT%H:%M:%SZ')
+            commit_sha=${{ github.sha }}
+            commit_message=${{ github.event.head_commit.message }}
+            commit_author=${{ github.event.head_commit.author.name }}
