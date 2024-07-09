@@ -2,16 +2,16 @@ package henrik
 
 import (
 	"fmt"
-	"github.com/go-zoox/fetch"
 	"github.com/spf13/viper"
 )
 
 func GetRank(region, name, tag string) (Rank, error) {
-	response, err := fetch.Get(fmt.Sprintf("%s/v2/mmr/%s/%s/%s", APIURL, region, name, tag), &fetch.Config{
-		Headers: map[string]string{
-			"Authorization": viper.GetString("henrik.api_key"),
-		},
-	})
+	url := fmt.Sprintf("%s/v2/mmr/%s/%s/%s", APIURL, region, name, tag)
+	headers := map[string]string{
+		"Authorization": viper.GetString("henrik.api_key"),
+	}
+
+	response, err := fetchWithRetry(url, headers)
 	if err != nil {
 		return Rank{}, err
 	}
